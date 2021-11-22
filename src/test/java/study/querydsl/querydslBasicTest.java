@@ -1,5 +1,6 @@
 package study.querydsl;
 
+import com.querydsl.core.QueryResults;
 import com.querydsl.jpa.impl.JPAQueryFactory;
 import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
@@ -80,5 +81,19 @@ class querydslBasicTest {
         Assertions.assertThat(mem1.size()).isEqualTo(1);
         Assertions.assertThat(mem1.get(0).getAge()).isEqualTo(20);
         Assertions.assertThat(mem1.get(0).getUsername()).isEqualTo("mem1");
+    }
+
+    @Test
+    public void fetch(){
+        QueryResults<Member> memberQueryResults = jpaQueryFactory
+                .selectFrom(member)
+                .fetchResults();
+
+        long total = memberQueryResults.getTotal();
+        long limit = memberQueryResults.getLimit();
+        long offset = memberQueryResults.getOffset();
+        List<Member> results = memberQueryResults.getResults();
+
+        long l = jpaQueryFactory.selectFrom(member).fetchCount();
     }
 }
