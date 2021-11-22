@@ -3,6 +3,7 @@ package study.querydsl;
 import com.querydsl.core.QueryResults;
 import com.querydsl.core.Tuple;
 import com.querydsl.core.types.dsl.CaseBuilder;
+import com.querydsl.core.types.dsl.Expressions;
 import com.querydsl.jpa.JPAExpressions;
 import com.querydsl.jpa.impl.JPAQuery;
 import com.querydsl.jpa.impl.JPAQueryFactory;
@@ -233,7 +234,7 @@ class querydslBasicTest {
                                 .when(10).then("열살")
                                 .when(20).then("슴살")
                                 .when(30).then("서른")
-                                .otherwise("그 외")
+                                .otherwise(member.age.stringValue())
                 )
                 .from(member)
                 .fetch();
@@ -245,6 +246,21 @@ class querydslBasicTest {
                                 .when(member.age.between(31, 60)).then("31~60")
                                 .otherwise("over 61")
                 ).from(member)
+                .fetch();
+    }
+
+    @Test
+    public void constTest() {
+        List<Tuple> fetch1 = jpaQueryFactory
+                .select(member.username, Expressions.constant("A")) // 무조건 상수 A를 포함
+                .from(member)
+                .where(member.username.eq("mem1"))
+                .fetch();
+
+        // {username}_{age}
+        List<String> fetch2 = jpaQueryFactory
+                .select(member.username.concat("_").concat(member.age.stringValue()))
+                .from(member)
                 .fetch();
     }
 }
