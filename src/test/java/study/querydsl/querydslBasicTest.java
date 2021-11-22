@@ -2,6 +2,7 @@ package study.querydsl;
 
 import com.querydsl.core.QueryResults;
 import com.querydsl.core.Tuple;
+import com.querydsl.core.types.dsl.CaseBuilder;
 import com.querydsl.jpa.JPAExpressions;
 import com.querydsl.jpa.impl.JPAQuery;
 import com.querydsl.jpa.impl.JPAQueryFactory;
@@ -222,5 +223,28 @@ class querydslBasicTest {
                 .fetch();
 
         // cf. from 절 내에 sub-query는 사용이 불가능하다!
+    }
+
+    @Test
+    public void casetest() {
+        List<String> fetch1 = jpaQueryFactory
+                .select(
+                        member.age
+                                .when(10).then("열살")
+                                .when(20).then("슴살")
+                                .when(30).then("서른")
+                                .otherwise("그 외")
+                )
+                .from(member)
+                .fetch();
+
+        List<String> fetch2 = jpaQueryFactory
+                .select(
+                        new CaseBuilder()
+                                .when(member.age.between(0, 30)).then("0~30")
+                                .when(member.age.between(31, 60)).then("31~60")
+                                .otherwise("over 61")
+                ).from(member)
+                .fetch();
     }
 }
