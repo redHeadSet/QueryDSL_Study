@@ -1,6 +1,7 @@
 package study.querydsl;
 
 import com.querydsl.core.QueryResults;
+import com.querydsl.core.Tuple;
 import com.querydsl.jpa.impl.JPAQueryFactory;
 import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
@@ -9,6 +10,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.transaction.annotation.Transactional;
 import study.querydsl.entity.Member;
+import study.querydsl.entity.QTeam;
 import study.querydsl.entity.Team;
 
 import javax.persistence.EntityManager;
@@ -16,6 +18,7 @@ import javax.persistence.EntityManager;
 import java.util.List;
 
 import static study.querydsl.entity.QMember.member;
+import static study.querydsl.entity.QTeam.*;
 
 @SpringBootTest
 @Transactional
@@ -34,9 +37,11 @@ class querydslBasicTest {
         Member member1 = new Member("mem1", 20); em.persist(member1); member1.changeTeam(team1);
         Member member2 = new Member("mem2", 30); em.persist(member2); member2.changeTeam(team1);
         Member member3 = new Member("mem3", 40); em.persist(member3); member3.changeTeam(team1);
+
         Member member4 = new Member("mem4", 50); em.persist(member4); member4.changeTeam(team2);
         Member member5 = new Member("mem5", 60); em.persist(member5); member5.changeTeam(team2);
         Member member6 = new Member("mem6", 70); em.persist(member6); member6.changeTeam(team2);
+
         Member member7 = new Member(null, 70); em.persist(member7);
         Member member8 = new Member(null, 70); em.persist(member8);
     }
@@ -96,5 +101,45 @@ class querydslBasicTest {
                 .offset(1)
                 .limit(2)
                 .fetchResults();
+    }
+
+    @Test
+    public void aggregation() {
+        List<Tuple> fetch = jpaQueryFactory
+                .select(
+                        member.count(),
+                        member.age.sum(),
+                        member.age.avg(),
+                        member.age.min(),
+                        member.age.max()
+                )
+                .from(member)
+                .fetch();
+        Tuple tuple = fetch.get(0);
+        Long aLong = tuple.get(member.count());
+        Integer integer = tuple.get(member.age.sum());
+        Double aDouble = tuple.get(member.age.avg());
+        Integer integer1 = tuple.get(member.age.min());
+        Integer integer2 = tuple.get(member.age.max());
+    }
+
+    @Test
+    public void group() {
+        List<Tuple> result = jpaQueryFactory
+                .select(
+                        member.team.name,
+                        member.age.avg()
+                )
+                .from(member)
+                .join(member.team, team)
+                .groupBy(team.name)
+                .having(member.age.avg().gt(40))
+                .fetch();
+
+        for (Tuple each : result) {
+            String teamName = each.get(member.team.name);
+            Double teamAgeAvg = each.get(member.age.avg());
+            System.out.println(teamName + " team : " + teamAgeAvg);
+        }
     }
 }
