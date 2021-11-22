@@ -28,30 +28,17 @@ class querydslBasicTest {
     private void makeDefault() {
         jpaQueryFactory = new JPAQueryFactory(em);
 
-        Member member1 = new Member("mem1", 20);
-        Member member2 = new Member("mem2", 30);
-        Member member3 = new Member("mem3", 40);
-        Member member4 = new Member("mem4", 50);
-        Member member5 = new Member("mem5", 60);
-        Member member6 = new Member("mem6", 70);
-        em.persist(member1);
-        em.persist(member2);
-        em.persist(member3);
-        em.persist(member4);
-        em.persist(member5);
-        em.persist(member6);
+        Team team1 = new Team("team1"); em.persist(team1);
+        Team team2 = new Team("team2"); em.persist(team2);
 
-        Team team1 = new Team("team1");
-        Team team2 = new Team("team2");
-        em.persist(team1);
-        em.persist(team2);
-
-        member1.changeTeam(team1);
-        member2.changeTeam(team1);
-        member3.changeTeam(team1);
-        member4.changeTeam(team2);
-        member5.changeTeam(team2);
-        member6.changeTeam(team2);
+        Member member1 = new Member("mem1", 20); em.persist(member1); member1.changeTeam(team1);
+        Member member2 = new Member("mem2", 30); em.persist(member2); member2.changeTeam(team1);
+        Member member3 = new Member("mem3", 40); em.persist(member3); member3.changeTeam(team1);
+        Member member4 = new Member("mem4", 50); em.persist(member4); member4.changeTeam(team2);
+        Member member5 = new Member("mem5", 60); em.persist(member5); member5.changeTeam(team2);
+        Member member6 = new Member("mem6", 70); em.persist(member6); member6.changeTeam(team2);
+        Member member7 = new Member(null, 70); em.persist(member7);
+        Member member8 = new Member(null, 70); em.persist(member8);
     }
 
     @Test
@@ -95,5 +82,19 @@ class querydslBasicTest {
         List<Member> results = memberQueryResults.getResults();
 
         long l = jpaQueryFactory.selectFrom(member).fetchCount();
+    }
+
+//    정렬 순서
+//    1. 나이 asc
+//    2. 이름 desc
+//    3. 이름이 없는 경우 맨 뒤
+    @Test
+    public void sortAndPaging() {
+        QueryResults<Member> memberQueryResults = jpaQueryFactory
+                .selectFrom(member)
+                .orderBy(member.age.desc(), member.username.asc().nullsLast())
+                .offset(1)
+                .limit(2)
+                .fetchResults();
     }
 }
