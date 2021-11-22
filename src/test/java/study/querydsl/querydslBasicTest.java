@@ -2,6 +2,7 @@ package study.querydsl;
 
 import com.querydsl.core.QueryResults;
 import com.querydsl.core.Tuple;
+import com.querydsl.jpa.impl.JPAQuery;
 import com.querydsl.jpa.impl.JPAQueryFactory;
 import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
@@ -163,5 +164,31 @@ class querydslBasicTest {
                                                                   // 정상적으로 결과가 나오진 않음 (억지로 한거라)
                                                                   // on을 사용하여 연관관계가 없는 대상을 join 가능
                 .fetch();
+    }
+
+    @Test
+    public void fetchJoin() {
+        em.flush(); em.clear();
+
+        // find One
+        Member mem1 = jpaQueryFactory
+                .select(member)
+                .from(member)
+                .join(member.team, team)
+                .where(member.username.eq("mem1"))
+                .fetchOne();
+        mem1.getTeam().getName();   // 지연로딩이라 team 처리 시에 select 문이 또 나감
+
+        // fetch join
+        em.flush(); em.clear();
+
+        Member mem2 = jpaQueryFactory
+                .select(member)
+                .from(member)
+                .join(member.team, team).fetchJoin()    // fetchjoin 처리 시 아래 getTeam().getName() 처리 시
+                                                        // select 처리 안하고 나감
+                .where(member.username.eq("mem1"))
+                .fetchOne();
+        mem2.getTeam().getName();
     }
 }
