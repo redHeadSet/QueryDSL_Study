@@ -2,6 +2,7 @@ package study.querydsl;
 
 import com.querydsl.core.QueryResults;
 import com.querydsl.core.Tuple;
+import com.querydsl.jpa.JPAExpressions;
 import com.querydsl.jpa.impl.JPAQuery;
 import com.querydsl.jpa.impl.JPAQueryFactory;
 import org.assertj.core.api.Assertions;
@@ -11,6 +12,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.transaction.annotation.Transactional;
 import study.querydsl.entity.Member;
+import study.querydsl.entity.QMember;
 import study.querydsl.entity.QTeam;
 import study.querydsl.entity.Team;
 
@@ -190,5 +192,35 @@ class querydslBasicTest {
                 .where(member.username.eq("mem1"))
                 .fetchOne();
         mem2.getTeam().getName();
+    }
+
+    @Test
+    public void sub_query() {
+        // 서브 쿼리 alias 는 겹치면 안되기 때문에 처리
+        QMember subMember1 = new QMember("subMember1");
+        List<Member> fetch1 = jpaQueryFactory
+                .select(member)
+                .from(member)
+                .where(member.age.eq(
+                        JPAExpressions  // 서브 쿼리 처리
+                                .select(subMember1.age.max())
+                                .from(subMember1)
+                ))
+                .fetch();
+
+        // IN 처리 예제
+        QMember subMember2 = new QMember("subMember2");
+        List<Member> fetch2 = jpaQueryFactory
+                .select(member)
+                .from(member)
+                .where(member.age.in(
+                        JPAExpressions  // 서브 쿼리 처리
+                                .select(subMember2.age)
+                                .from(subMember2)
+                                .where(subMember2.age.goe(30))
+                ))
+                .fetch();
+
+        // cf. from 절 내에 sub-query는 사용이 불가능하다!
     }
 }
