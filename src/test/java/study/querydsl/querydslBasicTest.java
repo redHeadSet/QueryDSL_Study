@@ -12,6 +12,8 @@ import study.querydsl.entity.Team;
 
 import javax.persistence.EntityManager;
 
+import java.util.List;
+
 import static study.querydsl.entity.QMember.member;
 
 @SpringBootTest
@@ -60,5 +62,23 @@ class querydslBasicTest {
                 .fetchOne();
 
         Assertions.assertThat(findedMem.getAge()).isEqualTo(20);
+    }
+
+    @Test
+    public void search() {
+        List<Member> mem1 = jpaQueryFactory
+                .selectFrom(member)
+                .where(member.username.eq("mem1")
+                        .and(member.age.eq(20)))
+                .fetch();
+        List<Member> mem2 = jpaQueryFactory
+                .selectFrom(member)
+                .where( member.username.eq("mem1"), // AND 조건인 경우, 쉼표로 구분 가능
+                        member.age.eq(20))
+                .fetch();
+
+        Assertions.assertThat(mem1.size()).isEqualTo(1);
+        Assertions.assertThat(mem1.get(0).getAge()).isEqualTo(20);
+        Assertions.assertThat(mem1.get(0).getUsername()).isEqualTo("mem1");
     }
 }
