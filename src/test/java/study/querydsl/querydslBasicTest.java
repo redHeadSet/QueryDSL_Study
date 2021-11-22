@@ -142,4 +142,26 @@ class querydslBasicTest {
             System.out.println(teamName + " team : " + teamAgeAvg);
         }
     }
+
+    /*
+    조인 대상 필터링
+     */
+    @Test
+    public void join_on_filter() {
+        List<Tuple> result1 = jpaQueryFactory
+                .select(member, team)
+                .from(member)
+                .leftJoin(member.team, team)
+                    .on(team.name.eq("team1"))
+                .fetch();
+
+        // 위와 다르게 그대로 join 하는 경우에는 leftJoin 안에 인자가 1개만 넘어간다
+        List<Tuple> result2 = jpaQueryFactory
+                .select(member, team)
+                .from(member)
+                .leftJoin(team).on(member.username.eq(team.name)) // 사용자 이름과 팀 이름이 같은 경우 join
+                                                                  // 정상적으로 결과가 나오진 않음 (억지로 한거라)
+                                                                  // on을 사용하여 연관관계가 없는 대상을 join 가능
+                .fetch();
+    }
 }
