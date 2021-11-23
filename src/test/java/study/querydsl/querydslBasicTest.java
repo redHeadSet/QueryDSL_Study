@@ -17,6 +17,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.test.annotation.Commit;
 import org.springframework.transaction.annotation.Transactional;
 import study.querydsl.dto.MemberDto;
 import study.querydsl.dto.MemberDto2;
@@ -392,6 +393,38 @@ class querydslBasicTest {
     private BooleanExpression doubleCheck(String name, Integer age){
         return usernameEq(name).and(ageEq(age));
     }
+
+    @Test
+    public void bulk_test1() {
+        long updated_count = jpaQueryFactory
+                .update(member)
+                .set(member.username, "비회원")
+                .where(member.age.lt(45))
+                .execute();
+        // 주의!
+        // 벌크 연산은 DB로 바로 update 문이 처리되기 때문에
+        // 영속성 컨텍스트와 동기화되지 않는다!
+        em.flush(); em.clear();
+    }
+
+    @Test
+    public void bulk_test2() {
+        long updated_count = jpaQueryFactory
+                .update(member)
+                .set(member.age, member.age.add(-1))
+                .execute();
+        em.flush(); em.clear();
+    }
+
+    @Test
+    public void bulk_test3() {
+        long deleted_count = jpaQueryFactory
+                .delete(member)
+                .where(member.age.goe(50))
+                .execute();
+        em.flush(); em.clear();
+    }
+
 
 
 }
