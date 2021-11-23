@@ -2,6 +2,8 @@ package study.querydsl;
 
 import com.querydsl.core.QueryResults;
 import com.querydsl.core.Tuple;
+import com.querydsl.core.types.ExpressionUtils;
+import com.querydsl.core.types.Projections;
 import com.querydsl.core.types.dsl.CaseBuilder;
 import com.querydsl.core.types.dsl.Expressions;
 import com.querydsl.jpa.JPAExpressions;
@@ -13,6 +15,8 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.transaction.annotation.Transactional;
+import study.querydsl.dto.MemberDto;
+import study.querydsl.dto.MemberDto2;
 import study.querydsl.entity.Member;
 import study.querydsl.entity.QMember;
 import study.querydsl.entity.QTeam;
@@ -260,6 +264,61 @@ class querydslBasicTest {
         // {username}_{age}
         List<String> fetch2 = jpaQueryFactory
                 .select(member.username.concat("_").concat(member.age.stringValue()))
+                .from(member)
+                .fetch();
+    }
+
+    @Test
+    public void use_dto_test() {
+        // JPQL 방식
+        em.createQuery("select new study.querydsl.dto.MemberDto(m.username, m.age)" +
+                        " from Member m")
+                .getResultList();
+
+        // Setter 방식 - setter 함수를 사용하여 값이 입력됨
+        List<MemberDto> setter = jpaQueryFactory
+                .select(
+                        Projections.bean(MemberDto.class,
+                                member.username,
+                                member.age)
+                )
+                .from(member)
+                .fetch();
+
+        // Field 방식 1 - setter 없이 바로 필드에 데이터 입력(필드명이 동일해야 함)
+        List<MemberDto> field1 = jpaQueryFactory
+                .select(
+                        Projections.fields(MemberDto.class,
+                                member.username,
+                                member.age)
+                )
+                .from(member)
+                .fetch();
+
+        // Field 방식 2 - 만약, 필드명이 다를 경우 as 필요
+        QMember subMember = new QMember("subMember");
+        List<MemberDto2> field2 = jpaQueryFactory
+                .select(
+                        Projections.fields(MemberDto2.class,
+                                member.username.as("name"), // field를 찾을 때 이름 기반으로 찾기 때문에 alias 설정
+                                ExpressionUtils.as(         // 값을 sub_query 처리하고 싶을 때의 예시
+                                        JPAExpressions
+                                                .select(subMember.age.max())
+                                                .from(subMember),
+                                        "age"
+                                )
+                        )
+                )
+                .from(member)
+                .fetch();
+
+        // 생성자 방식 - 생성자에서 바로 입력 - 생성자는 Type을 보고 입력됨
+        List<MemberDto> constructor = jpaQueryFactory
+                .select(
+                        Projections.constructor(MemberDto.class,
+                                member.username,
+                                member.age)
+                )
                 .from(member)
                 .fetch();
     }
