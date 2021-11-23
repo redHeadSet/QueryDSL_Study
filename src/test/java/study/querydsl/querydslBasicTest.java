@@ -1,9 +1,12 @@
 package study.querydsl;
 
+import com.querydsl.core.BooleanBuilder;
 import com.querydsl.core.QueryResults;
 import com.querydsl.core.Tuple;
 import com.querydsl.core.types.ExpressionUtils;
+import com.querydsl.core.types.Predicate;
 import com.querydsl.core.types.Projections;
+import com.querydsl.core.types.dsl.BooleanExpression;
 import com.querydsl.core.types.dsl.CaseBuilder;
 import com.querydsl.core.types.dsl.Expressions;
 import com.querydsl.jpa.JPAExpressions;
@@ -340,6 +343,54 @@ class querydslBasicTest {
         Q클래스를 직접 생성해야 함
         DTO를 순수하게 쓰지 못함 : querydsl에 종속됨
          */
+    }
+
+    @Test
+    public void dynamicQuery_test() {
+        String name = "mem1";
+        Integer age = 20;
+
+        List<Member> result1 = use_BooleanBuilder(name, age);
+        List<Member> result2 = use_multi_where(name, age);
+        System.out.println();
+    }
+
+    public List<Member> use_BooleanBuilder(String username, Integer age) {
+        BooleanBuilder builder = new BooleanBuilder();
+        if(username != null)
+            builder.and(member.username.eq(username));
+        if(age != null)
+            builder.and(member.age.eq(age));
+
+        return jpaQueryFactory
+                .select(member)
+                .from(member)
+                .where(builder)
+                .fetch();
+    }
+
+    public List<Member> use_multi_where(String username, Integer age){
+        return jpaQueryFactory
+                .select(member)
+                .from(member)
+                .where(
+                        usernameEq(username),
+                        ageEq(age)
+                )
+                .fetch();
+    }
+
+    private BooleanExpression usernameEq(String username) {
+        return (username != null) ? member.username.eq(username) : null;
+    }
+
+    private BooleanExpression ageEq(Integer age) {
+        return (age != null) ? member.age.eq(age) : null;
+    }
+
+    // 추가적으로, 위의 조합이 가능 - 좀 더 의미있는 함수명으로도 사용 가능
+    private BooleanExpression doubleCheck(String name, Integer age){
+        return usernameEq(name).and(ageEq(age));
     }
 
 
