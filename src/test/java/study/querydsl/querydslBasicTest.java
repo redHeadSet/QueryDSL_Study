@@ -17,6 +17,8 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.transaction.annotation.Transactional;
 import study.querydsl.dto.MemberDto;
 import study.querydsl.dto.MemberDto2;
+import study.querydsl.dto.MemberDto_qp;
+import study.querydsl.dto.QMemberDto_qp;
 import study.querydsl.entity.Member;
 import study.querydsl.entity.QMember;
 import study.querydsl.entity.QTeam;
@@ -322,4 +324,23 @@ class querydslBasicTest {
                 .from(member)
                 .fetch();
     }
+
+    @Test
+    public void query_projection_test() {
+        List<MemberDto_qp> result = jpaQueryFactory
+                .select(new QMemberDto_qp(member.username, member.age))
+                .from(member)
+                .fetch();
+
+        /* 장점
+        컴파일 시점에 에러 잡힘 (잘못된 인자 등)
+         */
+        /* 단점
+        @QueryProjection 넣어야 함 - 라이브러리 의존성이 생김
+        Q클래스를 직접 생성해야 함
+        DTO를 순수하게 쓰지 못함 : querydsl에 종속됨
+         */
+    }
+
+
 }
