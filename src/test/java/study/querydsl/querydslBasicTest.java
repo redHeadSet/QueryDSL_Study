@@ -13,6 +13,7 @@ import com.querydsl.jpa.JPAExpressions;
 import com.querydsl.jpa.impl.JPAQuery;
 import com.querydsl.jpa.impl.JPAQueryFactory;
 import org.assertj.core.api.Assertions;
+import org.hibernate.dialect.H2Dialect;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -425,6 +426,29 @@ class querydslBasicTest {
         em.flush(); em.clear();
     }
 
+    @Test
+    public void sql_func_test() {
+        // 아래에 쓰인 모든 function명은 모두
+        // H2Dialect 쪽에 registerFunction 처리가 되어있어야 작동한다
 
+        List<String> fetch1 = jpaQueryFactory
+                .select(
+                        Expressions.stringTemplate(
+                                "function('replace', {0}, {1}, {2})",
+                                member.username, "mem", "MEM"
+                        )
+                )
+                .from(member)
+                .fetch();
+
+        List<String> fetch2 = jpaQueryFactory
+                .select(member.username)
+                .from(member)
+                .where(member.username.eq(
+                        member.username.lower() // 일반적으로 쓰이는 함수의 경우, querydsl이 내장하고 있음
+                        )
+                )
+                .fetch();
+    }
 
 }
