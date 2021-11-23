@@ -1,6 +1,6 @@
 spring:
   profiles:
-    active: local # 테스트와 구분하기 위함 : 테스트 application.yml 파일은 test로 지정해둠
+    active: test
   datasource:
     url: jdbc:h2:tcp://localhost/~/querydsl
     username: sa
