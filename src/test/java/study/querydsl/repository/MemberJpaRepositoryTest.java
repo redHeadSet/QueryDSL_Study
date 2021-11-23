@@ -55,10 +55,11 @@ class MemberJpaRepositoryTest {
 
         // when
         List<MemberTeamDto> allByMTD = memberJpaRepository.findAllByMTD();
-        List<MemberTeamDto> byCondition = memberJpaRepository.findByCondition(searchCondition);
+        List<MemberTeamDto> byCondition1 = memberJpaRepository.findByConditionByBuilder(searchCondition);
+        List<MemberTeamDto> byCondition2 = memberJpaRepository.findByConditionByMultiWhere(searchCondition);
 
         // then
-        for (MemberTeamDto each : byCondition) {
+        for (MemberTeamDto each : byCondition2) {
             System.out.println("");
         }
     }

@@ -11,7 +11,6 @@ import study.querydsl.dto.QMemberTeamDto;
 import study.querydsl.dto.SearchCondition;
 import study.querydsl.entity.Member;
 import study.querydsl.entity.QMember;
-import study.querydsl.entity.QTeam;
 
 import javax.persistence.EntityManager;
 
@@ -72,7 +71,7 @@ public class MemberJpaRepository {
                 .fetch();
     }
 
-    public List<MemberTeamDto> findByCondition(SearchCondition searchCondition){
+    public List<MemberTeamDto> findByConditionByBuilder(SearchCondition searchCondition){
         return jpaQueryFactory
                 .select(new QMemberTeamDto(
                         member.id,
@@ -83,10 +82,11 @@ public class MemberJpaRepository {
                 )
                 .from(member)
                 .join(member.team, team)
-                .where( makeCondition(searchCondition) )
+                .where( makeConditionByBuilder(searchCondition) )
                 .fetch();
     }
-    private BooleanBuilder makeCondition(SearchCondition searchCondition){
+
+    private BooleanBuilder makeConditionByBuilder(SearchCondition searchCondition){
         BooleanBuilder builder = new BooleanBuilder();
         if(hasText(searchCondition.getUsername()))
             builder.and(member.username.eq(searchCondition.getUsername()));
@@ -99,16 +99,37 @@ public class MemberJpaRepository {
 
         return builder;
     }
-//    private BooleanExpression matchUsername(String username){
-//        return username != null ? member.username.eq(username) : null;
-//    }
-//    private BooleanExpression matchTeamName(String teamName) {
-//        return teamName != null ? team.name.eq(teamName) : null;
-//    }
-//    private BooleanExpression goeAge(Integer ageGoe){
-//        return ageGoe != null ? member.age.goe(ageGoe) : null;
-//    }
-//    private BooleanExpression loeAge(Integer ageLoe){
-//        return ageLoe != null ? member.age.loe(ageLoe) : null;
-//    }
+
+    public List<MemberTeamDto> findByConditionByMultiWhere(SearchCondition searchCondition){
+        return jpaQueryFactory
+                .select(new QMemberTeamDto(
+                        member.id,
+                        member.username,
+                        member.age,
+                        member.team.id,
+                        member.team.name)
+                )
+                .from(member)
+                .join(member.team, team)
+                .where(
+                        matchUsername(searchCondition.getUsername()),
+                        matchTeamName(searchCondition.getTeamname()),
+                        goeAge(searchCondition.getAgeGoe()),
+                        loeAge(searchCondition.getAgeLoe())
+                )
+                .fetch();
+    }
+
+    private BooleanExpression matchUsername(String username){
+        return hasText(username) ? member.username.eq(username) : null;
+    }
+    private BooleanExpression matchTeamName(String teamName) {
+        return hasText(teamName) ? team.name.eq(teamName) : null;
+    }
+    private BooleanExpression goeAge(Integer ageGoe){
+        return ageGoe != null ? member.age.goe(ageGoe) : null;
+    }
+    private BooleanExpression loeAge(Integer ageLoe){
+        return ageLoe != null ? member.age.loe(ageLoe) : null;
+    }
 }
