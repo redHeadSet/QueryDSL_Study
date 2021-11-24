@@ -4,6 +4,9 @@ import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.transaction.annotation.Transactional;
 import study.querydsl.dto.MemberTeamDto;
 import study.querydsl.dto.SearchCondition;
@@ -47,15 +50,38 @@ class MemberRepositoryTest {
     public void get_dto_data() {
         // given
         makeDefault();
-        SearchCondition searchCondition
-                = new SearchCondition(null, "team1", null, null);
 
         // when
+        SearchCondition searchCondition
+                = new SearchCondition(null, "team1", null, null);
         List<MemberTeamDto> byCondition2 = memberRepository.findByConditionByMultiWhere(searchCondition);
 
         // then
         for (MemberTeamDto each : byCondition2) {
             System.out.println("");
+        }
+    }
+
+    @Test
+    public void paging_test() {
+        // given
+        makeDefault();
+
+        // when
+        SearchCondition searchCondition
+                = new SearchCondition(null, null, 20, null);
+        PageRequest pageRequest = PageRequest.of(1, 2);
+        Page<MemberTeamDto> memberTeamDtos = memberRepository.searchPageSimple(searchCondition, pageRequest);
+
+        // then
+        long totalElements = memberTeamDtos.getTotalElements();
+        int totalPages = memberTeamDtos.getTotalPages();
+        int number = memberTeamDtos.getNumber();
+        int size = memberTeamDtos.getSize();
+
+        List<MemberTeamDto> content = memberTeamDtos.getContent();
+        for (MemberTeamDto each : content) {
+            each.getUsername();
         }
     }
 }

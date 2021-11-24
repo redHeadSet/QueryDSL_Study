@@ -1,8 +1,12 @@
 package study.querydsl.repository;
 
+import com.querydsl.core.QueryResults;
 import com.querydsl.core.types.dsl.BooleanExpression;
 import com.querydsl.jpa.impl.JPAQueryFactory;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.Pageable;
 import study.querydsl.dto.MemberTeamDto;
 import study.querydsl.dto.QMemberTeamDto;
 import study.querydsl.dto.SearchCondition;
@@ -34,22 +38,49 @@ public class MemberRepositoryImpl implements MemberRepositoryCustomInterface{
                 .where(
                         matchUsername(searchCondition.getUsername()),
                         matchTeamName(searchCondition.getTeamname()),
-                        goeAge(searchCondition.getAgeGoe()),
-                        loeAge(searchCondition.getAgeLoe())
+                        matchGoeAge(searchCondition.getAgeGoe()),
+                        matchLoeAge(searchCondition.getAgeLoe())
                 )
                 .fetch();
     }
 
-    private BooleanExpression matchUsername(String username){
-        return hasText(username) ? member.username.eq(username) : null;
+
+    @Override
+    public Page<MemberTeamDto> searchPageSimple(SearchCondition searchCondition, Pageable pageable) {
+        // 위와 동일, 페이징 쿼리만 추가
+        QueryResults<MemberTeamDto> results = jpaQueryFactory
+                .select(new QMemberTeamDto(
+                        member.id,
+                        member.username,
+                        member.age,
+                        member.team.id,
+                        member.team.name)
+                )
+                .from(member)
+                .join(member.team, team)
+                .where(
+                        matchUsername(searchCondition.getUsername()),
+                        matchTeamName(searchCondition.getTeamname()),
+                        matchGoeAge(searchCondition.getAgeGoe()),
+                        matchLoeAge(searchCondition.getAgeLoe())
+                )
+                .offset(pageable.getOffset())
+                .limit(pageable.getPageSize())
+                .fetchResults();
+
+        List<MemberTeamDto> contents = results.getResults();
+        Long total = results.getTotal();
+        return new PageImpl<>(contents, pageable, total);
     }
-    private BooleanExpression matchTeamName(String teamName) {
-        return hasText(teamName) ? team.name.eq(teamName) : null;
+
+    @Override
+    public Page<MemberTeamDto> searchPageComplex(SearchCondition searchCondition, Pageable pageable) {
+        return null;
     }
-    private BooleanExpression goeAge(Integer ageGoe){
-        return ageGoe != null ? member.age.goe(ageGoe) : null;
-    }
-    private BooleanExpression loeAge(Integer ageLoe){
-        return ageLoe != null ? member.age.loe(ageLoe) : null;
-    }
+
+
+    private BooleanExpression matchUsername(String username){ return hasText(username) ? member.username.eq(username) : null; }
+    private BooleanExpression matchTeamName(String teamName){ return hasText(teamName) ? team.name.eq(teamName) : null; }
+    private BooleanExpression matchGoeAge(Integer age){ return age != null ? member.age.goe(age) : null; }
+    private BooleanExpression matchLoeAge(Integer age){ return age != null ? member.age.loe(age) : null; }
 }
