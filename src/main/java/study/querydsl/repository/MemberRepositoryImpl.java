@@ -75,7 +75,41 @@ public class MemberRepositoryImpl implements MemberRepositoryCustomInterface{
 
     @Override
     public Page<MemberTeamDto> searchPageComplex(SearchCondition searchCondition, Pageable pageable) {
-        return null;
+        // 위와 동일, count 쿼리 분리
+        // 위에서는 count 쿼리를 최적화하지 못함 (DataJpa 내에서 알아서 최적화하긴 하지만, 적합하지 않을 수 있음)
+        // 가능하면 count 쿼리 최적화를 하는 것이 속도 면에서 이점
+        List<MemberTeamDto> contents = jpaQueryFactory
+                .select(new QMemberTeamDto(
+                        member.id,
+                        member.username,
+                        member.age,
+                        member.team.id,
+                        member.team.name)
+                )
+                .from(member)
+                .join(member.team, team)
+                .where(
+                        matchUsername(searchCondition.getUsername()),
+                        matchTeamName(searchCondition.getTeamname()),
+                        matchGoeAge(searchCondition.getAgeGoe()),
+                        matchLoeAge(searchCondition.getAgeLoe())
+                )
+                .offset(pageable.getOffset())
+                .limit(pageable.getPageSize())
+                .fetch();
+
+        Long total = jpaQueryFactory
+                .selectFrom(member)
+                .join(member.team, team)
+                .where(
+                        matchUsername(searchCondition.getUsername()),
+                        matchTeamName(searchCondition.getTeamname()),
+                        matchGoeAge(searchCondition.getAgeGoe()),
+                        matchLoeAge(searchCondition.getAgeLoe())
+                )
+                .fetchCount();
+
+        return new PageImpl<>(contents, pageable, total);
     }
 
 
