@@ -2,14 +2,17 @@ package study.querydsl.repository;
 
 import com.querydsl.core.QueryResults;
 import com.querydsl.core.types.dsl.BooleanExpression;
+import com.querydsl.jpa.impl.JPAQuery;
 import com.querydsl.jpa.impl.JPAQueryFactory;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.support.PageableExecutionUtils;
 import study.querydsl.dto.MemberTeamDto;
 import study.querydsl.dto.QMemberTeamDto;
 import study.querydsl.dto.SearchCondition;
+import study.querydsl.entity.Member;
 
 import javax.persistence.EntityManager;
 import java.util.List;
@@ -98,7 +101,7 @@ public class MemberRepositoryImpl implements MemberRepositoryCustomInterface{
                 .limit(pageable.getPageSize())
                 .fetch();
 
-        Long total = jpaQueryFactory
+        JPAQuery<Member> countQuery = jpaQueryFactory
                 .selectFrom(member)
                 .join(member.team, team)
                 .where(
@@ -106,10 +109,14 @@ public class MemberRepositoryImpl implements MemberRepositoryCustomInterface{
                         matchTeamName(searchCondition.getTeamname()),
                         matchGoeAge(searchCondition.getAgeGoe()),
                         matchLoeAge(searchCondition.getAgeLoe())
-                )
-                .fetchCount();
+                );
 
-        return new PageImpl<>(contents, pageable, total);
+        // 아래와 같이 PageableExecutionUtils 에 함수를 전달하게 되면,
+        // 필요한 상황에만 count 쿼리를 날리게 변경할 수 있다
+        // ex) 총 row가 페이지 사이즈보다 작을 때 / 마지막 페이지일 때
+
+//        return PageableExecutionUtils.getPage(contents, pageable, () -> countQuery.fetchCount());
+        return PageableExecutionUtils.getPage(contents, pageable, countQuery::fetchCount);
     }
 
 
